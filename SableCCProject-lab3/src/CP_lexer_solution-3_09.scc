@@ -1,0 +1,226 @@
+Helpers
+    all = [0..0xffff];
+    salpha = ['a' .. 'z'];
+    ualpha = [ 'A' .. 'Z'];
+    nums   = [ '0'..'9' ];
+    
+    dot = '.';
+    space  = ' ';          
+    dquote = '"';
+    squote = ''';
+    dslash = '//';
+    mcomment_start = '/*';
+    mcomment_end = '*/';
+    
+    allchars = [' ' .. '~'];
+    
+    suchars = [salpha + ualpha];
+    su_chars = [suchars + '_'];
+    charnums = [suchars + nums];
+    cns = [charnums + space ];
+    
+    lf  = 0x000a; // line feed
+    cr  = 0x000d; // carriage return
+    ff  = 0x000c; // form feed
+    ht  = 0x0009; // tab
+
+    new_line = lf | cr | cr lf ;
+    not_cr_lf = [all - [cr + lf]];
+    not_star = [all - '*'];
+    not_star_slash = [not_star - '/'];
+
+    nallchars = [allchars + [lf + cr]];
+    
+    //esc_chars = [[['\t' + '\b'] + ['\n' + '\r']] + [['\\' + '\"'] + '\f']];
+States
+    normal;
+    
+Tokens
+    // comments
+    sline_comment = dslash (allchars)* new_line;
+    mline_comment = '/*' not_star* '*'+ (not_star_slash not_star* '*'+ )* '/';
+    white_space          = (space | ht | ff | new_line)*;
+
+    // literals
+    string_lit = dquote (cns* ('\t' | '\b' | '\n' | '\r' | '\\' | '\"' | '\f' | '''|('\' '''))* cns*)* dquote ;
+    char_lit = squote (allchars |'\t' | '\b' | '\n' | '\r' | '\\' | '\"' | '\f'|('\' ''')) squote ;
+    int_lit = nums+;
+    float_lit = ((nums* dot nums+) |(nums+ dot nums*))(['e' + 'E'] ['+' + '-']? nums+)*;
+
+    // operators
+    kplus_operator = '+';
+    kminus_operator = '-';
+    kmultiplication_operator = '*';
+    division_operator = '/';
+    klessthen = '<';
+    klessthen_or_equal = '<=';
+    kgreaterthen = '>';
+    kgreaterthen_or_equal = '>=';
+    kcomparison_operator = '==';
+    kand = '&&';
+    kor = '||';
+    knot_operator = '!';
+    kconditional_colon_operator = ':';
+    ksemicolon = ';';
+    kcomma = ',';
+    kleft_brace = '(';
+    kright_brace = ')';
+    kleft_curly  = '{';
+    kright_curly = '}';
+    kleft_square = '[';
+    kright_square = ']';
+    knot_equals_comparison = '!=';
+    kequals = '=';
+    karrow_operator = '->';
+    kbitwise_xor_operator = '^';
+    kmodulo_disison_operator = '%';
+    kdot_operator = '.';
+    kbitwise_and_operator = '&';
+    kbitwise_or_operator = '|';
+
+    // keywords
+    kclass = 'class';
+    kbool = 'bool';
+    kbreak = 'break';
+    kchar = 'char';
+    kcontinue = 'continue';
+    kdo = 'do';
+    kelse = 'else';
+    kfalse = 'false';
+    kfloat = 'float';
+    kif = 'if';
+    kint = 'int';
+    knull = 'null';
+    knew = 'new';
+    kprivate = 'private';
+    kprotected = 'protected';
+    kpublic = 'public';
+    kreturn = 'return';
+    kstatic = 'static';
+    kstring = 'string';
+    kthis = 'this';
+    ktrue = 'true';
+    kwhile = 'while';
+    kvoid = 'void';
+    kconst = 'const';
+
+// identifiers
+    kidentifier = su_chars (su_chars | nums)*;
+
+Ignored Tokens
+	sline_comment,
+	mline_comment,
+	white_space;
+	
+
+Productions
+	program = class_decls;
+	id = kidentifier ;
+	class_decls = 								class_decls class_decl |
+				  {single_class_declaration}	class_decl;
+	class_decl = 							class_hdr kleft_curly  kright_curly |
+				 {class_decl_with_members}	class_hdr kleft_curly member_decls kright_curly
+				 ;
+	class_hdr  = kclass id;
+	member_decls = 			member_decls member |
+					{member}member;
+	
+	member   = 				field |
+				{method} 	method |
+				{empty}		ksemicolon;
+				
+	field   =   {declaration} type id ksemicolon | 
+				{assignment} type id kequals expr  ksemicolon |
+				{array_declaration} type id kleft_square int_lit kright_square ksemicolon ;
+				
+	int     = kint;
+	char    = kchar;
+	bool    = kbool;
+	string  = kstring;
+	float   = kfloat;
+	type    = 	int |
+				{char}char |
+				{bool}bool |
+				{string}string |
+				{float}float ;
+	
+	method  =  method_hdr kleft_brace formals kright_brace block |
+				{empty_call}method_hdr kleft_brace kright_brace block ;
+	
+	method_hdr = kvoid id |
+				 {nonvoid} type id ;
+	formals    = formal |
+				{formals} formals kcomma formal;
+	formal    = type id |
+				{arr} type id kleft_square kright_square;
+	
+	block    = kleft_curly stmts kright_curly |
+				{empty} kleft_curly  kright_curly;
+	
+	stmts   = stmts stmt |
+				{single} stmt;
+	stmt    = simple_stmt  |
+				{if_else_stmt} kif condition stmt kelse [else_stmt]:stmt ;
+	condition  = kleft_brace expr kright_brace;
+	local_decl = type id  ksemicolon |
+				{assignment} type id kequals expr ksemicolon |
+				{array} type id kleft_square int_lit kright_square ksemicolon ;
+				
+	simple_stmt =  local_decl   |
+					{field_access} field_access kequals expr ksemicolon |
+					{method_call} method_call  ksemicolon   |
+					{return_empty }  kreturn ksemicolon |
+					{return }  kreturn expr ksemicolon |
+					{block} block |
+					{while} kwhile condition block |
+					{do} kdo stmts kwhile condition ksemicolon |
+					{empty} ksemicolon ;
+	
+	field_access = id |
+					{object_field} id kdot_operator [field]:id |
+					{array_ref} array_ref ;
+	
+	array_ref   = id kleft_square expr kright_square |
+					{array} id kdot_operator [field]:id kleft_square expr kright_square ;
+	method_call = id kleft_brace kright_brace  |
+				{args} id kleft_brace args kright_brace |
+				{object } id kdot_operator [field]:id kleft_brace kright_brace |
+				{object_args} id kdot_operator [field]:id kleft_brace args kright_brace ;
+	args       = expr  | 
+				{multiple_args } args kcomma expr 
+				;
+				
+	expr      = expr kor e |
+				{and} expr kand e |
+				{plain} e;
+	e        = f klessthen [second]:f |
+				{greater_then}f kgreaterthen [second]:f |
+				{less_then}f klessthen_or_equal [second]:f |
+				{greater_then_or_equal}f kgreaterthen_or_equal [second]:f |
+				{comparison}f kcomparison_operator [second]:f |
+				{not_equals}f knot_equals_comparison [second]:f  |
+				{other}f ;
+	f        = f kplus_operator g  |
+				{minus}f kminus_operator g |
+				{other}g ;
+	g		 =  g kmultiplication_operator h |
+				{divison}g division_operator h |
+				{modulo}g kmodulo_disison_operator h |
+				{other}h;
+	h		 = knot_operator h |
+				{unary_plus}kplus_operator h |
+				{unary_minus}kminus_operator h |
+				{other}primary ;
+	
+	primary  = field_access |
+				{method_call}method_call |
+				{int_lit}int_lit   |
+				{char_lit}char_lit  |
+				{str_lit}string_lit   |
+				{float_lit}float_lit |
+				{truth}ktrue  |
+				{nontruth}kfalse |
+				{braced}kleft_brace expr kright_brace ;
+
+
+

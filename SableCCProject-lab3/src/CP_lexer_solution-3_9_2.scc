@@ -1,0 +1,245 @@
+
+
+// *******************       Helpers       *******************************
+
+Helpers
+    // example helper regular expressions
+
+    all = [0..0xffff];
+    space  = ' ';          
+    lf  = 0x000a; // line feed
+    cr  = 0x000d; // carriage return
+    ff  = 0x000c; // form feed
+    ht  = 0x0009; // tab
+
+    new_line = lf | cr | cr lf ;
+	nt_cr_lf = [all - [cr + lf]];
+	digit = ['0' .. '9'];
+	nondigit = ['_' + [['a' .. 'z'] + ['A' .. 'Z']]];
+	nonzero_num = ['1' .. '9'];
+	decimal_constant =  digit+;
+	
+	escape_sequence = '\' ''' | '\"' | '\?' | '\\' |'\a' | '\b' | '\f' | '\n' | '\r' | '\t' | '\v';
+	s_char = [all - ['"' + ['\' + [10 + 13]]]] | escape_sequence;
+	s_char_sequence = s_char+;
+	
+	c_char = [all - [''' + ['\' + [10 + 13]]]] | escape_sequence;
+	c_char_sequence = c_char+;
+	
+	digit_sequence = digit+;
+	fractional_constant = digit_sequence? '.' digit_sequence | digit_sequence '.';
+	sign = '+' | '-';
+	exponent_part = ('e' | 'E') sign? digit_sequence;
+	not_star = [all - '*'];
+	not_star_slash = [not_star - '/'];
+States
+    normal;
+    
+// *******************       Tokens       ********************************
+
+Tokens
+    // Example token:
+    // Do not change the white_space token below (LexerDriver uses it).
+    white_space          = (space | ht | ff | new_line)*;
+	
+// *****************       Comments       ********************************
+multiline_comment = '/*' not_star* '*'+ (not_star_slash not_star* '*'+)* '/';
+single_comment = '//' (nt_cr_lf)* new_line*;
+
+
+// *****************       Literals       ********************************
+integer_constant = decimal_constant;
+string_literal = '"' s_char_sequence? '"';
+character_constant = ''' c_char_sequence ''';
+floating_constant = fractional_constant exponent_part?  | digit_sequence exponent_part ;
+
+// *****************       Operators       *******************************
+dot = '.';
+comma = ',';
+colon = ':';
+semicolon = ';';
+l_par = '(';
+r_par = ')';
+l_bracket = '[';
+r_bracket = ']';
+l_brace = '{';
+r_brace = '}';
+star = '*';
+div = '/';
+mod = '%';
+ampersand = '&';
+plus = '+';
+minus = '-';
+excl_mark = '!';
+bar = '|';
+equal = '=';
+eq = '==';
+neq = '!=';
+lt = '<';
+lteq = '<=';
+gt = '>';
+gteq = '>=';
+arrow = '->';
+and_oprtn = '&&';
+or_oprtn = '||';
+mod_equal = '%=';
+plus_equal = '+=';
+minus_equal = '-=';
+ampersand_equal = '&=';
+caret_equal = '^=';
+
+// *****************       Reserved Words       ******************************
+bool = 'bool';
+break = 'break';
+char ='char';
+const='const';
+continue='continue';
+clazz='class';
+do='do';
+else='else';
+false='false';
+float='float';
+if='if';
+int='int';
+new='new';
+null='null';
+private='private';
+protected='protected';
+public='public';
+return='return';
+static='static';
+string='string';
+struct='struct';
+this='this';
+true='true';
+while='while';
+void='void';
+
+id = nondigit (digit | nondigit)*;
+
+Ignored Tokens
+single_comment, 
+multiline_comment,
+white_space;
+ 
+Productions
+    program = class_decls;
+	class_decls = {classdecls_first} class_decls class_decl
+	              | {classdecls_second} class_decl;
+	              
+	class_decl = {classdecl_first} class_hdr l_brace r_brace
+				 | {classdecl_second} class_hdr l_brace member_decls r_brace;
+				 
+	class_hdr = {classhdr_first} clazz id;
+	
+	member_decls = {memberdecls_first} member_decls member
+	               | {memberdecls_second} member;
+	               
+	member = {member_first} field
+	         | {member_second} method
+	         | {member_third} semicolon ;
+	         
+	field = {field_first} type id semicolon
+			| {field_second} type id equal expr semicolon
+			| {field_third} type id l_bracket integer_constant r_bracket semicolon;
+			
+	type =   {type_first} int
+		   | {type_second} char
+		   | {type_third} bool
+		   | {type_fourth} string
+		   | {type_fifth} float ;
+		   
+	method = {method_first} method_hdr l_par formals r_par block
+	         | {method_second} method_hdr l_par r_par block;
+	         
+	method_hdr = {methodhdr_first} void id
+	 			| {methodhdr_second} type id;
+	
+	formals = {formals_first} formal
+			 | {formals_second} formals comma formal;
+			 
+	formal = {formal_first} type id
+	 		| {formal_second} type id l_bracket r_bracket;
+	 		
+	block = {block_first} l_brace stmts r_brace
+			| {block_second} l_brace r_brace;
+			
+	stmts = {stmts_first} stmts stmt
+	 		| {stmts_second} stmt;
+	
+	mif = {mif_first} if condition [mif_one]:mif else [mif_two]:mif
+		| {stmt_second} simple_stmt;
+	
+	uif = {uif_first} if condition stmt 
+		 |{uif_second} if condition mif else uif;
+	 		
+	stmt = {stmt_first} mif
+		 | {stmt_second} uif;
+			
+	condition = l_par expr r_par;
+	
+	local_decl = {localdecl_first} type id semicolon 
+				| {localdecl_second} type id equal expr semicolon 
+				| {localdecl_third} type id l_bracket integer_constant r_bracket semicolon;
+				
+	simple_stmt = {simplestmt_first} local_decl
+				 | {simplestmt_second} field_access equal expr semicolon
+				 | {simplestmt_third} method_call semicolon
+				 | {simplestmt_fourth} return semicolon
+				 | {simplestmt_fifth} return expr semicolon
+				 | {simplestmt_sixth} block
+				 | {simplestmt_seventh} while condition block
+				 | {simplestmt_eightth} do stmts while condition semicolon
+				 | {simplestmt_ninth} semicolon; 
+				 
+	field_access = {fieldaccess_first} id
+				| {fieldaccess_second} [id_one]:id dot [id_two]:id
+				| {fieldaccess_third} array_ref;
+				
+	array_ref = {arrayref_first} id l_bracket expr r_bracket 
+				| {arrayref_second} [id_one]:id dot [id_two]:id l_bracket expr r_bracket;
+				
+	method_call = {methodcall_first} id l_par r_par
+				| {methodcall_second} id l_par args r_par
+				| {methodcall_third} [id_one]:id dot [id_two]:id l_par r_par
+				| {methodcall_fourth} [id_one]:id dot [id_two]:id l_par args r_par;
+				
+	args = {args_first} expr
+		 | {args_second} args comma expr;
+		 
+	expr = {expr_one} expr or_oprtn expr_logical
+		 | {expr_two} expr and_oprtn expr_logical
+		 | {expr_three} expr_logical;
+	
+	expr_logical =  {etwo_five} [ethree_one]:expr_logical eq [ethree_two]:expr_add_sub
+		  | {etwo_six} [ethree_one]:expr_logical neq [ethree_two]:expr_add_sub
+		  | {etwo_one} [ethree_one]:expr_logical lt [ethree_two]:expr_add_sub
+		  | {etwo_two} [ethree_one]:expr_logical gt [ethree_two]:expr_add_sub
+		  | {etwo_three} [ethree_one]:expr_logical lteq [ethree_two]:expr_add_sub
+		  | {etwo_four} [ethree_one]:expr_logical gteq [ethree_two]:expr_add_sub
+		  | {etwo_seven} expr_add_sub;
+		  	 
+	expr_add_sub = {ethree_one} expr_add_sub plus expr_mul_div
+			| {ethree_two} expr_add_sub minus expr_mul_div
+			| {ethree_three} expr_mul_div;
+			
+	expr_mul_div = {efour_one} expr_mul_div star expr_unary_oprt
+		   | {efour_two} expr_mul_div div expr_unary_oprt
+		   | {efour_three} expr_mul_div mod expr_unary_oprt
+		   | {efour_four} expr_unary_oprt;
+		   
+	expr_unary_oprt = {efive_one} excl_mark expr_unary_oprt
+		   | {efive_two} plus expr_unary_oprt
+		   | {efive_three} minus expr_unary_oprt
+		   | {e_five_four} primary;
+		   
+	primary = {primary_one} field_access
+			| {primary_two} method_call
+			| {primary_three} integer_constant
+			| {primary_four} character_constant
+			| {primary_five} string_literal
+			| {primary_six} floating_constant
+			| {primary_seven} true
+			| {primary_eight} false
+			| {primary_nine} l_par expr r_par;
+			

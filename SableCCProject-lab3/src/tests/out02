@@ -1,0 +1,4 @@
+Starting Lexer
+Starting Parser
+class A { int A ; bool B ; char C ; string S ; } class B { int A ; bool B ; char C ; string S ; }  
+End of Parser test

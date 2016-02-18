@@ -1,0 +1,195 @@
+Helpers
+    all = [0..0xffff];
+    salpha = ['a' .. 'z'];
+    ualpha = [ 'A' .. 'Z'];
+    nums   = [ '0'..'9' ];
+    
+    dot = '.';
+    space  = ' ';          
+    dquote = '"';
+    squote = ''';
+    dslash = '//';
+    mcomment_start = '/*';
+    mcomment_end = '*/';
+    
+    allchars = [' ' .. '~'];
+    
+    suchars = [salpha + ualpha];
+    su_chars = [suchars + '_'];
+    charnums = [suchars + nums];
+    cns = [charnums + space ];
+    
+    lf  = 0x000a; // line feed
+    cr  = 0x000d; // carriage return
+    ff  = 0x000c; // form feed
+    ht  = 0x0009; // tab
+
+    new_line = lf | cr | cr lf ;
+    not_cr_lf = [all - [cr + lf]];
+    not_star = [all - '*'];
+    not_star_slash = [not_star - '/'];
+
+    nallchars = [allchars + [lf + cr]];
+    
+    //esc_chars = [[['\t' + '\b'] + ['\n' + '\r']] + [['\\' + '\"'] + '\f']];
+States
+    normal;
+    
+Tokens
+    // comments
+    sline_comment = dslash (allchars)* new_line;
+    mline_comment = '/*' not_star* '*'+ (not_star_slash not_star* '*'+ )* '/';
+    white_space          = (space | ht | ff | new_line)*;
+
+    // literals
+    string_lit = dquote (cns* ('\t' | '\b' | '\n' | '\r' | '\\' | '\"' | '\f' | '''|('\' '''))* cns*)* dquote ;
+    char_lit = squote (allchars |'\t' | '\b' | '\n' | '\r' | '\\' | '\"' | '\f'|('\' ''')) squote ;
+    int_lit = nums+;
+    float_lit = ((nums* dot nums+) |(nums+ dot nums*))(['e' + 'E'] ['+' + '-']? nums+)*;
+
+    // operators
+    kplus_operator = '+';
+    kminus_operator = '-';
+    kmultiplication_operator = '*';
+    division_operator = '/';
+    klessthen = '<';
+    klessthen_or_equal = '<=';
+    kgreaterthen = '>';
+    kgreaterthen_or_equal = '>=';
+    kcomparison_operator = '==';
+    kand = '&&';
+    kor = '||';
+    knot_operator = '!';
+    kconditional_colon_operator = ':';
+    ksemicolon = ';';
+    kcomma = ',';
+    kleft_brace = '(';
+    kright_brace = ')';
+    kleft_curly  = '{';
+    kright_curly = '}';
+    kleft_square = '[';
+    kright_square = ']';
+    knot_equals_comparison = '!=';
+    kequals = '=';
+    karrow_operator = '->';
+    kbitwise_xor_operator = '^';
+    kmodulo_disison_operator = '%';
+    kdot_operator = '.';
+    kbitwise_and_operator = '&';
+    kbitwise_or_operator = '|';
+
+    // keywords
+    kclass = 'class';
+    kbool = 'bool';
+    kbreak = 'break';
+    kchar = 'char';
+    kcontinue = 'continue';
+    kdo = 'do';
+    kelse = 'else';
+    kfalse = 'false';
+    kfloat = 'float';
+    kif = 'if';
+    kint = 'int';
+    knull = 'null';
+    knew = 'new';
+    kprivate = 'private';
+    kprotected = 'protected';
+    kpublic = 'public';
+    kreturn = 'return';
+    kstatic = 'static';
+    kstring = 'string';
+    kthis = 'this';
+    ktrue = 'true';
+    kwhile = 'while';
+    kvoid = 'void';
+    kconst = 'const';
+
+// identifiers
+    kidentifier = su_chars (su_chars | nums)*;
+
+Ignored Tokens
+	sline_comment,
+	mline_comment,
+	white_space;
+	
+
+Productions
+	program = pclass*;
+	
+	pclass = kclass [class_name]:kidentifier kleft_curly declarations* kright_curly ; 
+	
+	declarations = {integer}integer | {boolean}boolean | {character}character | {string}string;
+	
+	integer      =  int_declaration |
+					{int_declaration_assignment} int_declaration_assignment |
+					{integer_function} integer_function;
+	int_declaration = kint variable ksemicolon;
+	int_declaration_assignment =  kint kidentifier  kequals var_identifier ksemicolon;
+	integer_function = kint [function_name]:kidentifier kleft_brace [type]:kint kidentifier kright_brace kleft_curly 
+							statement*	kright_curly ;
+
+	boolean      =  boolean_declaration |
+					{boolean_declaration_assignment} boolean_declaration_assignment |
+					{boolean_function} boolean_function;
+	boolean_declaration = kbool variable ksemicolon;
+	boolean_declaration_assignment = kbool kidentifier  kequals var_identifier ksemicolon;
+	boolean_function = kbool [function_name]:kidentifier kleft_brace parameters  kright_brace kleft_curly statement*	kright_curly ;
+	
+	character    =  kchar kidentifier ksemicolon|
+					{character_function} character_function ;
+	character_function = kchar [function_name]:kidentifier kleft_brace parameters kright_brace kleft_curly statement*	kright_curly ;
+							
+	string       =  kstring kidentifier ksemicolon |
+					{string_function} string_function;
+	string_function = kstring [function_name]:kidentifier kleft_brace parameters kright_brace kleft_curly  statement*	kright_curly ;
+	
+	parameters = type variable next_parameter* ;
+	next_parameter = kcomma type kidentifier;
+	
+	type = {integer}kint |{boolean} kbool |{character} kchar|{string} kstring;
+	
+	variable  = kidentifier |
+				{object_variable} [object]:kidentifier kdot_operator [field]:kidentifier |
+				{array_variable} array_accessor |
+				{object_variable_array} [object]:kidentifier kdot_operator array_accessor
+				;
+				
+	array_accessor = {by_literal}kidentifier kleft_square [index]:int_lit? kright_square |
+					 {by_variable} kidentifier kleft_square [index]:kidentifier kright_square;
+				
+	statement = variable kequals expression ksemicolon  | 
+				{empty_statement} ksemicolon|
+				{conditional_statements} conditional_statements |
+				{declarations} declarations;
+	conditional_statements = 	{if_else_condition}if_else_condition |
+								{while_condition} while_condition;
+								
+	expression = {plus}expression kplus_operator var_identifier |
+				 {minus}expression kminus_operator var_identifier |
+				 {multiplication} expression kmultiplication_operator var_identifier |
+				 {division} expression division_operator var_identifier	|
+				 {identifier} var_identifier ;
+	
+	var_identifier = {variable} variable |
+					 {literal} literal ;
+	
+	if_else_condition    = kif kleft_brace comparison kright_brace block  
+							kelse [else_block]:block ;
+	block				 =  {block_statement}kleft_curly statement* kright_curly |
+							{single_statement}statement ;
+	while_condition     = kwhile kleft_brace comparison kright_brace kleft_curly statement* kright_curly;
+	
+	comparison 			  = {variable_comparison}kidentifier comp_operator [second_value]:kidentifier|
+							{literal_comparison} kidentifier comp_operator literal|
+							{single_variable} variable;
+							
+	literal 			  = {integer_literal} int_lit |
+							{string_literal} kstring |
+							{char_literal}kchar |
+							{bool_literal} kbool;
+	comp_operator		  = {greater_then_or_equal} kgreaterthen_or_equal |
+							{greater_then} kgreaterthen |
+							{less_then_or_equal} klessthen_or_equal |
+							{less_then} klessthen |
+							{eauals}kcomparison_operator;
+

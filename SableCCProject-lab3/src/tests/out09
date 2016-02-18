@@ -1,0 +1,4 @@
+Starting Lexer
+Starting Parser
+class in09 { int C ; int B ; int testMethod ( int A ) { if ( A - 2 < B + 7 == B > 10 != C == B ) B = A ; ; } ; void testMethod2 ( char A ) { if ( A - 2 < B + 7 || B > 10 && C == B || A <= C == B > 10 != C == B ) C = A ; } }  
+End of Parser test

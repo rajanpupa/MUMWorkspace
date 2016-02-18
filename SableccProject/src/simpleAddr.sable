@@ -1,0 +1,20 @@
+Package simpleAdder ; 
+     
+Helpers 
+    digit = ['0' .. '9'] ; 
+    sp = ' ' ; 
+    nl = 10 ; 
+  
+Tokens 
+    integer = digit+ sp*; 
+    plus = '+' sp*; 
+    semi = ';' nl?; 
+    
+//Ignored Tokens
+//	sp;
+  
+Productions 
+//	program = [left]:integer plus [right]:integer ;
+    program =  statement semi;
+    statement = statement plus integer | {int} integer ;
+    
