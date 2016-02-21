@@ -1,0 +1,18 @@
+Input file: src/tests4/in01.cp
+Starting Lexer
+Starting Parser
+Building Symbol Table
+
+
+Finished Symbol Table
+
+
+Global Scope: {
+class A{
+}
+class B{
+}
+
+}
+
+End of Symbol Table Builder test
