@@ -1,0 +1,58 @@
+#define n 2000
+
+/* initial array and the final result array*/
+int x[n + 1], y[n + 1], final[2 * n + 1];
+int i;
+
+/* This function will find the rank of the index passed, and put it in its appropriate place in the final array. */
+void PutXInPlace(int index) {
+	int testVal, j, rank;
+
+	testVal = x[index];
+	j = 0;
+	rank = 0;
+	do {
+		j = j % n + 1;
+		if(testVal >= y[j]) rank++;
+	} while(j != n);
+	final[rank + index] = testVal;
+}
+
+/* This function will find the rank of the index passed, and put it in its appropriate place in the final array. */
+void PutYInPlace(int index) {
+	int testVal, j, rank;
+
+	testVal = y[index];
+	j = 0;
+	rank = 0;
+	do {
+		j = j % n + 1;
+		if(testVal > x[j]) rank++;
+	} while(j != n);
+	final[rank + index] = testVal;
+}
+
+/* main function*/
+main() {
+	/* read the first array*/
+	for(i = 1; i <= n; i++) {
+		cin >> x[i];
+	}
+	/* read the second array*/
+	cout << " now the second array " << endl;
+	for(i = 1; i <= n; i++) {
+		cin >> y[i];
+	}
+	
+	/*merge*/
+	forall i = 1 to n do 
+		PutXInPlace(i);
+		
+	forall i = 1 to n do
+		PutYInPlace(i);
+		
+	cout << "-----------------------Final output---------------------------------" << endl;
+	for(i = 1; i <= 2*n; i++) {
+		cout << final[i] << endl;
+	}
+}
